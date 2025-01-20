@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>User Info Collector</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    .info-box {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .value {
+      word-break: break-all;
+      color: #666;
+    }
+    button {
+      width: 100%;
+      padding: 8px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <div class="info-box">
+    <div class="label">User ID:</div>
+    <div id="userId" class="value">Loading...</div>
+  </div>
+  <div class="info-box">
+    <div class="label">IP Address:</div>
+    <div id="ipAddress" class="value">Loading...</div>
+  </div>
+  <button id="copyButton">Copy Info</button>
+  <script src="popup.js"></script>
+</body>
+</html>
