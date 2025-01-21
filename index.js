@@ -101,7 +101,6 @@ class BotInstance {
         console.log(`Connected to ${proxy}`.blue);
         console.log(`Proxy IP: ${proxyDetails.ip.yellow}, Region: ${proxyDetails.region} ${proxyDetails.country}`.white);
         console.log(`WebSocket connection established for userID: ${userID}`.green);
-        this.sendPing(wsClient, proxyDetails.ip);
       };
 
       wsClient.onmessage = (event) => {
@@ -121,18 +120,31 @@ class BotInstance {
             result: {
               browser_id: generateUUID(),
               user_id: userID,
-              user_agent: 'Mozilla/5.0',
+              user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
               timestamp: Math.floor(Date.now() / 1000),
               device_type: 'desktop',
               version: '4.28.2',
+              platform: 'Windows',
+              os: 'Windows',
+              browser: 'Chrome'
             },
           };
           console.log(`Sending AUTH response: ${JSON.stringify(authResponse, null, 2)}`.yellow);
           wsClient.send(JSON.stringify(authResponse));
           console.log(`Sent authentication for userID: ${authResponse.result.user_id}`.green);
+
+          // 发送认证后立即发送 PING
+          setTimeout(() => {
+            this.sendPing(wsClient, proxyDetails.ip);
+          }, 1000);
         } else if (message.action === 'PONG') {
           const totalDataUsageKB = (this.totalDataUsage[userID] / 1024).toFixed(2);
           console.log(`Received PONG for UserID: ${userID.green}, Used ${totalDataUsageKB.yellow} KB total packet data`.cyan);
+          
+          // 每次收到 PONG 后，间隔一段时间再发送下一个 PING
+          setTimeout(() => {
+            this.sendPing(wsClient, proxyDetails.ip);
+          }, 30000); // 30秒后发送下一个 PING
         }
       };
 
@@ -159,16 +171,17 @@ class BotInstance {
   }
 
   sendPing(wsClient, proxyIP) {
-    setInterval(() => {
-      const pingMsg = {
-        id: generateUUID(),
-        version: '1.0.0',
-        action: 'PING',
-        data: {},
-      };
-      wsClient.send(JSON.stringify(pingMsg));
-      console.log(`Send PING from ${proxyIP}`.green);
-    }, 26000);
+    const pingMessage = {
+      id: generateUUID(),
+      action: 'PING',
+      data: {
+        proxy_ip: proxyIP,
+        timestamp: Math.floor(Date.now() / 1000)
+      }
+    };
+    console.log(`Send PING from ${proxyIP}`.green);
+    console.log(`PING message: ${JSON.stringify(pingMessage, null, 2)}`.gray);
+    wsClient.send(JSON.stringify(pingMessage));
   }
 
   defaultHeaders() {
