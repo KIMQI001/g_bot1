@@ -63,35 +63,11 @@ class BotInstance {
       const proxyDetails = await this.getProxyDetails(proxy);
       if (!proxyDetails) return;
 
-      const wsURL = `wss://${this.configuration.websocketHost}`;
-      
-      let agent;
-      try {
-        agent = this.getProxyAgent(proxy);
-        console.log(`Created proxy agent for ${proxy}`.cyan);
-      } catch (error) {
-        console.error(`Failed to create proxy agent: ${error.message}`.red);
-        return;
-      }
-      
-      const options = {
-        handshakeTimeout: 30000,
+      const wsClient = new WebSocket('wss://proxy2.wynd.network:4650/', {
+        agent: this.getProxyAgent(proxy),
         headers: this.defaultHeaders(),
-        agent: agent,
-        followRedirects: true,
         rejectUnauthorized: false
-      };
-
-      console.log(`Attempting to connect to ${wsURL} with proxy ${proxy}`.cyan);
-      console.log('WebSocket options:', JSON.stringify(options, (key, value) => {
-        if (key === 'agent') return '[Agent]';
-        return value;
-      }, 2));
-
-      // 创建连接前先等待一下
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const wsClient = new WebSocket(wsURL, options);
+      });
 
       wsClient.onopen = () => {
         console.log(`Connected to ${proxy}`.blue);
@@ -116,7 +92,7 @@ class BotInstance {
             result: {
               browser_id: generateUUID(),
               user_id: userID,
-              user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
               timestamp: Math.floor(Date.now() / 1000),
               device_type: 'desktop',
               version: '4.28.2',
@@ -167,15 +143,14 @@ class BotInstance {
   }
 
   sendPing(wsClient, proxyIP) {
+    const id = Math.random().toString(36).substring(2, 5); // 生成3位随机ID
     const pingMessage = {
-      id: generateUUID(),
+      id: id,
+      version: '1.0.0',
       action: 'PING',
-      data: {
-        proxy_ip: proxyIP,
-        timestamp: Math.floor(Date.now() / 1000)
-      }
+      data: {}
     };
-    console.log(`Send PING from ${proxyIP}`.green);
+    console.log(`Send PING with ID: ${id} from ${proxyIP}`.green);
     console.log(`PING message: ${JSON.stringify(pingMessage, null, 2)}`.gray);
     wsClient.send(JSON.stringify(pingMessage));
   }
@@ -187,7 +162,9 @@ class BotInstance {
       'Cache-Control': 'no-cache',
       'Pragma': 'no-cache',
       'Origin': 'chrome-extension://lehaonighjjimmpnagapkhpcdbhclfg',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+      'Sec-Websocket-Extensions': 'permessage-deflate; client_max_window_bits',
+      'Sec-Websocket-Version': '13'
     };
   }
 
