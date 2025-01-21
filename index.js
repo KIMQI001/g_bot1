@@ -60,19 +60,15 @@ class BotInstance {
 
   async proxyConnect(proxy, userID) {
     try {
-      const formattedProxy = proxy.startsWith('http')
-        ? proxy
-        : `http://${proxy}`;
-        
-      const proxyDetails = await this.fetchProxyIP(formattedProxy);
+      const proxyDetails = await this.getProxyDetails(proxy);
       if (!proxyDetails) return;
 
       const wsURL = `wss://${this.configuration.websocketHost}`;
       
       let agent;
       try {
-        agent = new HttpsProxyAgent(formattedProxy);
-        console.log(`Created proxy agent for ${formattedProxy}`.cyan);
+        agent = this.getProxyAgent(proxy);
+        console.log(`Created proxy agent for ${proxy}`.cyan);
       } catch (error) {
         console.error(`Failed to create proxy agent: ${error.message}`.red);
         return;
@@ -86,7 +82,7 @@ class BotInstance {
         rejectUnauthorized: false
       };
 
-      console.log(`Attempting to connect to ${wsURL} with proxy ${formattedProxy}`.cyan);
+      console.log(`Attempting to connect to ${wsURL} with proxy ${proxy}`.cyan);
       console.log('WebSocket options:', JSON.stringify(options, (key, value) => {
         if (key === 'agent') return '[Agent]';
         return value;
@@ -186,15 +182,20 @@ class BotInstance {
 
   defaultHeaders() {
     return {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Origin': 'https://wynd.network',
-      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br, zstd',
+      'Accept-Language': 'zh-CN,zh;q=0.9',
       'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
+      'Pragma': 'no-cache',
+      'Origin': 'chrome-extension://lehaonighjjimmpnagapkhpcdbhclfg',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     };
   }
 
-  async fetchProxyIP(proxy) {
+  getProxyAgent(proxy) {
+    return new HttpsProxyAgent(proxy);
+  }
+
+  async getProxyDetails(proxy) {
     const agent = new HttpsProxyAgent(proxy);
     try {
       const response = await request.get(this.configuration.ipCheckURL, {
